@@ -9,6 +9,8 @@ use App\Http\Controllers\PinController;
 use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\TransferController;
 use App\Http\Controllers\YouTubeTranscriptController;
+use App\Http\Controllers\BlueskyAuthController;
+use App\Http\Controllers\BlueskyPostController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -83,5 +85,93 @@ Route::prefix('v1')->group(function () {
         // Bulk extract transcripts
         Route::post('/bulk-extract', [YouTubeTranscriptController::class, 'bulkExtract'])
             ->name('transcripts.bulk-extract');
+    });
+});
+
+
+Route::prefix('bluesky')->middleware(['auth:sanctum'])->group(function () {
+    
+    /*
+    |--------------------------------------------------------------------------
+    | Authentication Routes
+    |--------------------------------------------------------------------------
+    */
+    Route::prefix('auth')->group(function () {
+        // Initialize OAuth flow
+        Route::post('initialize', [BlueskyAuthController::class, 'initialize']);
+        
+        // OAuth callback
+        Route::get('callback', [BlueskyAuthController::class, 'callback']);
+        
+        // Get current auth status
+        Route::get('status', [BlueskyAuthController::class, 'status']);
+        
+        // Refresh token
+        Route::post('refresh', [BlueskyAuthController::class, 'refresh']);
+        
+        // Revoke access
+        Route::post('revoke', [BlueskyAuthController::class, 'revoke']);
+    });
+
+     /*
+    |--------------------------------------------------------------------------
+    | Post Management Routes
+    |--------------------------------------------------------------------------
+    */
+    Route::prefix('posts')->middleware(['bluesky.auth'])->group(function () {
+        // Create new post
+        Route::post('/', [BlueskyPostController::class, 'create']);
+        
+        // Delete post
+        Route::delete('{uri}', [BlueskyPostController::class, 'delete']);
+        
+        // Get user's posts
+        Route::get('/', [BlueskyPostController::class, 'index']);
+        
+        // Get single post
+        Route::get('{uri}', [BlueskyPostController::class, 'show']);
+    });
+
+    /*
+    |--------------------------------------------------------------------------
+    | Media Upload Routes
+    |--------------------------------------------------------------------------
+    */
+    Route::prefix('media')->middleware(['bluesky.auth'])->group(function () {
+        // Upload media
+        Route::post('upload', [BlueskyPostController::class, 'uploadMedia']);
+        
+        // Get upload status
+        Route::get('status/{id}', [BlueskyPostController::class, 'mediaStatus']);
+    });
+
+
+     /*
+    |--------------------------------------------------------------------------
+    | Profile Routes
+    |--------------------------------------------------------------------------
+    */
+    Route::prefix('profile')->middleware(['bluesky.auth'])->group(function () {
+        // Get profile info
+        Route::get('/', [BlueskyPostController::class, 'getProfile']);
+        
+        // Update profile
+        Route::put('/', [BlueskyPostController::class, 'updateProfile']);
+
+
+    });
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Utility Routes
+    |--------------------------------------------------------------------------
+    */
+    Route::prefix('utils')->middleware(['bluesky.auth'])->group(function () {
+        // Check rate limits
+        Route::get('rate-limits', [BlueskyPostController::class, 'getRateLimits']);
+        
+        // Resolve handles
+        Route::post('resolve-handle', [BlueskyPostController::class, 'resolveHandle']);
     });
 });
