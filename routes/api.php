@@ -11,6 +11,7 @@ use App\Http\Controllers\TransferController;
 use App\Http\Controllers\YouTubeTranscriptController;
 use App\Http\Controllers\BlueskyAuthController;
 use App\Http\Controllers\BlueskyPostController;
+use App\Http\Controllers\VideoTranscriptController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -174,4 +175,53 @@ Route::prefix('bluesky')->middleware(['auth:sanctum'])->group(function () {
         // Resolve handles
         Route::post('resolve-handle', [BlueskyPostController::class, 'resolveHandle']);
     });
+});
+
+
+Route::prefix('v1')->group(function () {
+    // Video Transcript Routes
+    Route::prefix('transcripts')->group(function () {
+        // Process videos
+        Route::post('/youtube', [VideoTranscriptController::class, 'processYouTube'])
+            ->name('transcripts.youtube');
+        Route::post('/local', [VideoTranscriptController::class, 'processLocal'])
+            ->name('transcripts.local');
+        
+        // Get transcript
+        Route::get('/{id}', [VideoTranscriptController::class, 'show'])
+            ->name('transcripts.show');
+        
+        // Delete transcript
+        Route::delete('/{id}', [VideoTranscriptController::class, 'destroy'])
+            ->name('transcripts.destroy');
+        
+        // List transcripts with filters
+        Route::get('/', [VideoTranscriptController::class, 'index'])
+            ->name('transcripts.index');
+        
+        // Update subtitle style
+        Route::patch('/{id}/style', [VideoTranscriptController::class, 'updateStyle'])
+            ->name('transcripts.update-style');
+
+
+            // Regenerate video with new style
+        Route::post('/{id}/regenerate', [VideoTranscriptController::class, 'regenerateVideo'])
+        ->name('transcripts.regenerate');
+    
+    // Get transcript text only
+    Route::get('/{id}/text', [VideoTranscriptController::class, 'getText'])
+        ->name('transcripts.get-text');
+    
+    // Download SRT file
+    Route::get('/{id}/srt', [VideoTranscriptController::class, 'downloadSrt'])
+        ->name('transcripts.download-srt');
+    
+    // Get processing status
+    Route::get('/{id}/status', [VideoTranscriptController::class, 'getStatus'])
+        ->name('transcripts.status');
+    
+    // Cancel processing
+    Route::post('/{id}/cancel', [VideoTranscriptController::class, 'cancelProcessing'])
+        ->name('transcripts.cancel');
+});
 });
